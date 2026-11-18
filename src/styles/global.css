@@ -23,7 +23,7 @@ button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
 a { color: var(--color-primary); text-underline-offset: 0.2em; }
 a:hover { color: var(--color-primary-hover); }
 :focus-visible { outline: 3px solid #704caf; outline-offset: 4px; }
-h1, h2, h3 { font-family: Georgia, 'Times New Roman', serif; line-height: 1.2; }
+h1, h2, h3 { font-family: Georgia, 'Times New Roman', serif; line-height: 1.2; overflow-wrap: anywhere; hyphens: auto; }
 h1 { font-size: clamp(2.3rem, 6vw, 4.5rem); margin: 0 0 var(--space-3); }
 h2 { font-size: clamp(1.5rem, 3vw, 2rem); }
 p { max-width: 65ch; }
