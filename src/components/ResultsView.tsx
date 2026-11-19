@@ -14,8 +14,8 @@ export function ResultsView({ outfits, makeups }: ResultsViewProps) {
       <h2 id="outfit-results-title">Outfits para tu ocasión</h2>
       {outfits.length === 0 ? <Card><p>No hay outfits para mostrar. Puedes cambiar tus preferencias o explorar el catálogo.</p></Card> :
         <div className="steps">{outfits.map(outfit => <Card key={outfit.id}>
-          <img src={outfit.imagen} alt={`Ilustración de referencia de vestimenta: ${outfit.nombre}`} style={referenceImageStyle} />
-          <p className="muted">Ilustración de referencia</p>
+          <img src={outfit.imagen} alt={`Referencia visual generada con IA de vestimenta: ${outfit.nombre}`} style={referenceImageStyle} />
+          <p className="muted">Referencia visual generada con IA</p>
           <h3>{outfit.nombre}</h3>
           <p>{outfit.descripcion}</p>
           <h4>Prendas del conjunto</h4>
@@ -26,8 +26,8 @@ export function ResultsView({ outfits, makeups }: ResultsViewProps) {
       <h2 id="makeup-results-title">Maquillajes para acompañarte</h2>
       {makeups.length === 0 ? <Card><p>No hay maquillajes para mostrar. Puedes cambiar tus preferencias o explorar el catálogo.</p></Card> :
         <div className="steps">{makeups.map(makeup => <Card key={makeup.id}>
-          <img src={makeup.imagen} alt={`Ilustración de referencia de maquillaje: ${makeup.nombre}`} style={referenceImageStyle} />
-          <p className="muted">Ilustración de referencia · {makeup.intensidad === 'glam' ? 'Glam' : 'Natural'}</p>
+          <img src={makeup.imagen} alt={`Referencia visual generada con IA de maquillaje: ${makeup.nombre}`} style={referenceImageStyle} />
+          <p className="muted">Referencia visual generada con IA · {makeup.intensidad === 'glam' ? 'Glam' : 'Natural'}</p>
           <h3>{makeup.nombre}</h3>
           <p>{makeup.descripcion}</p>
         </Card>)}</div>}

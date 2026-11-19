@@ -25,7 +25,7 @@ export function CatalogPage() {
   return <>
     <p className="eyebrow">Tu próxima inspiración</p>
     <h1>Catálogo</h1>
-    <p>Explora 15 outfits y 10 estilos de maquillaje. Las ilustraciones son referencias generales; en cada descripción encontrarás los detalles de la propuesta.</p>
+    <p>Explora 15 outfits y 10 estilos de maquillaje. Las imágenes generadas con IA son referencias generales; en cada descripción encontrarás los detalles de la propuesta.</p>
     <Card>
       <div role="search" aria-label="Buscar en el catálogo">
         <label htmlFor="catalog-search">Buscar por nombre o descripción</label>

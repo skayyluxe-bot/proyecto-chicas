@@ -1,7 +1,7 @@
 import type { Makeup } from '../domain/types'
 
-const natural = `${import.meta.env.BASE_URL}images/makeup-natural.svg`
-const glam = `${import.meta.env.BASE_URL}images/makeup-glam.svg`
+const natural = `${import.meta.env.BASE_URL}images/makeup-natural-realista.png`
+const glam = `${import.meta.env.BASE_URL}images/makeup-glam-realista.png`
 
 export const makeups: Makeup[] = [
   { id: 'mk-cumpleanos-natural', nombre: 'Rosa de cumpleaños', descripcion: 'Rubor rosado, párpados suaves y labios con brillo transparente para una celebración de día.', ocasiones: ['cumpleanos'], intensidad: 'natural', imagen: natural },

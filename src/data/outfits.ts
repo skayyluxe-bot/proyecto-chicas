@@ -1,7 +1,7 @@
 import type { Outfit } from '../domain/types'
 
-const casual = `${import.meta.env.BASE_URL}images/outfit-casual.svg`
-const elegant = `${import.meta.env.BASE_URL}images/outfit-elegante.svg`
+const casual = `${import.meta.env.BASE_URL}images/outfit-casual-realista.png`
+const elegant = `${import.meta.env.BASE_URL}images/outfit-elegante-realista.png`
 
 export const outfits: Outfit[] = [
   { id: 'of-cumpleanos-01', nombre: 'Cumpleaños entre amigas', descripcion: 'Una combinación cómoda de denim y tonos claros para celebrar durante el día.', ocasiones: ['cumpleanos'], estilos: ['casual'], prendas: ['Jeans rectos', 'Blusa blanca', 'Zapatillas beige'], imagen: casual, makeupIds: ['mk-cumpleanos-natural'] },
