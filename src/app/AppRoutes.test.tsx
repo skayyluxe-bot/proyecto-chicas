@@ -106,6 +106,28 @@ describe('Rutas y consulta compartida', () => {
     expect(JSON.parse(screen.getByTestId('state').textContent!)).toEqual({ criteria: {}, photo: null })
   }, 30000)
 
+  it('valida la galería, muestra la referencia y la libera al continuar a resultados', async () => {
+    const user = userEvent.setup({ applyAccept: false })
+    renderApp('/ocasion')
+    await user.selectOptions(screen.getByLabelText('Ocasión (obligatoria)'), 'fiesta')
+    await user.click(screen.getByRole('button', { name: 'Continuar con fotografía' }))
+
+    const gallery = screen.getByLabelText('Seleccionar de la galería')
+    await user.upload(gallery, new File(['texto'], 'referencia.txt', { type: 'text/plain' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('Elige una imagen JPG, PNG o WebP')
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+
+    await user.upload(gallery, new File(['foto'], 'referencia.png', { type: 'image/png' }))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Fotografía de referencia seleccionada' })).toHaveAttribute('src', 'blob:test-reference')
+
+    vi.mocked(URL.revokeObjectURL).mockClear()
+    await user.click(screen.getByRole('button', { name: 'Ver resultados' }))
+    expect(screen.getByRole('heading', { name: 'Tus recomendaciones' })).toBeVisible()
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:test-reference')
+    expect(JSON.parse(screen.getByTestId('state').textContent!).photo).toBe('referencia.png')
+  }, 30000)
+
   it('exige una ocasión y permite continuar sin foto con preferencias opcionales', async () => {
     const user = userEvent.setup()
     renderApp('/ocasion')
@@ -123,5 +145,9 @@ describe('Rutas y consulta compartida', () => {
     })
     await user.click(screen.getByRole('link', { name: 'Cambiar preferencias' }))
     expect(screen.getByLabelText('Ocasión (obligatoria)')).toHaveValue('cumpleanos')
+    await user.selectOptions(screen.getByLabelText('Estilo de vestimenta (opcional)'), 'moderno')
+    await user.click(screen.getByRole('button', { name: 'Recomendar sin fotografía' }))
+    expect(screen.getAllByRole('heading', { level: 3 })[0]).toHaveTextContent('Cumpleaños contemporáneo')
+    expect(screen.getAllByRole('heading', { level: 3 })[3]).toHaveTextContent('Brillo de celebración')
   }, 30000)
 })
