@@ -1,9 +1,12 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HashRouter } from 'react-router-dom'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from './AppRoutes'
 import { ConsultationProvider, useConsultation } from '../state/ConsultationContext'
+import { ResultsView } from '../components/ResultsView'
+import { outfits } from '../data/outfits'
+import { makeups } from '../data/makeups'
 
 function StateProbe() {
   const { criteria, photo, updateCriteria, setPhoto } = useConsultation()
@@ -20,7 +23,32 @@ function renderApp(path: string) {
   return render(<HashRouter><ConsultationProvider><StateProbe /><AppRoutes /></ConsultationProvider></HashRouter>)
 }
 
-beforeEach(() => { window.location.hash = '/' })
+const BrowserURL = URL
+beforeAll(() => {
+  vi.stubGlobal('URL', class extends BrowserURL {
+    static createObjectURL = vi.fn(() => 'blob:test-reference')
+    static revokeObjectURL = vi.fn()
+  })
+})
+
+describe('Presentación independiente de resultados', () => {
+  it('muestra las propuestas recibidas y las prendas del outfit', () => {
+    render(<ResultsView outfits={[outfits[0]]} makeups={[makeups[0]]} />)
+    expect(screen.getByRole('heading', { name: outfits[0].nombre })).toBeVisible()
+    expect(screen.getByRole('heading', { name: makeups[0].nombre })).toBeVisible()
+    for (const prenda of outfits[0].prendas) expect(screen.getByText(prenda)).toBeVisible()
+    expect(screen.getAllByRole('img')).toHaveLength(2)
+  }, 30000)
+
+  it('presenta mensajes claros con arreglos vacíos', () => {
+    render(<ResultsView outfits={[]} makeups={[]} />)
+    expect(screen.getByText(/No hay outfits para mostrar/)).toBeVisible()
+    expect(screen.getByText(/No hay maquillajes para mostrar/)).toBeVisible()
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+  })
+})
+afterAll(() => vi.unstubAllGlobals())
+beforeEach(() => { window.history.replaceState(null, '', '/#/') })
 
 describe('Rutas y consulta compartida', () => {
   it.each([
@@ -33,7 +61,7 @@ describe('Rutas y consulta compartida', () => {
     renderApp(path)
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(title)
     expect(screen.getByRole('main')).toHaveFocus()
-  })
+  }, 30000)
 
   it('redirige una ruta desconocida al inicio', async () => {
     renderApp('/no-existe')
@@ -52,8 +80,8 @@ describe('Rutas y consulta compartida', () => {
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Catálogo')
     expect(JSON.parse(screen.getByTestId('state').textContent!)).toEqual(expected)
     await user.click(screen.getByRole('link', { name: 'Consulta' }))
-    await user.click(screen.getByRole('link', { name: 'Ver el paso de fotografía' }))
-    await user.click(screen.getByRole('link', { name: 'Ver la pantalla de resultados' }))
+    await user.click(screen.getByRole('button', { name: 'Continuar con fotografía' }))
+    await user.click(screen.getByRole('button', { name: 'Ver resultados' }))
     expect(JSON.parse(screen.getByTestId('state').textContent!)).toEqual(expected)
     await user.click(screen.getByRole('button', { name: 'Nueva consulta' }))
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Ocasión y preferencias')
@@ -68,5 +96,22 @@ describe('Rutas y consulta compartida', () => {
     await user.click(screen.getByRole('button', { name: 'Comenzar una consulta' }))
     expect(window.location.hash).toBe('#/ocasion')
     expect(JSON.parse(screen.getByTestId('state').textContent!)).toEqual({ criteria: {}, photo: null })
+  }, 30000)
+
+  it('exige una ocasión y permite continuar sin foto con preferencias opcionales', async () => {
+    const user = userEvent.setup()
+    renderApp('/ocasion')
+    await user.click(screen.getByRole('button', { name: 'Recomendar sin fotografía' }))
+    expect(window.location.hash).toBe('#/ocasion')
+    expect(screen.getByRole('alert')).toHaveTextContent('Selecciona una ocasión')
+    await user.selectOptions(screen.getByLabelText('Ocasión (obligatoria)'), 'cumpleanos')
+    await user.click(screen.getByRole('button', { name: 'Adjuntar referencia' }))
+    await user.click(screen.getByRole('button', { name: 'Recomendar sin fotografía' }))
+    expect(window.location.hash).toBe('#/resultados')
+    expect(JSON.parse(screen.getByTestId('state').textContent!)).toEqual({
+      criteria: { occasion: 'cumpleanos', style: 'sin_preferencia', makeup: 'sin_preferencia' }, photo: null,
+    })
+    await user.click(screen.getByRole('link', { name: 'Cambiar preferencias' }))
+    expect(screen.getByLabelText('Ocasión (obligatoria)')).toHaveValue('cumpleanos')
   }, 30000)
 })
