@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" role="img" aria-labelledby="title desc">
+  <title id="title">Maquillaje natural</title><desc id="desc">Ilustración original de una mirada suave, rubor y labios rosados.</desc>
+  <rect width="480" height="360" rx="24" fill="#eeefe9"/><circle cx="240" cy="178" r="140" fill="#faf9f6"/>
+  <path d="M157 113q10-64 83-64t83 64v85q0 83-83 116-83-33-83-116z" fill="#e2bda3"/>
+  <path d="M155 143Q135 42 240 40q105 2 85 103-24-28-38-69-73 49-132 69" fill="#63594d"/>
+  <g fill="none" stroke="#51483f" stroke-width="4" stroke-linecap="round"><path d="M179 166q22-13 40 0m42 0q22-13 40 0M181 189q18 13 36 0m46 0q18 13 36 0"/><path d="m240 193-7 36 12 2" stroke="#af8064"/></g>
+  <ellipse cx="185" cy="224" rx="21" ry="10" fill="#d89e91"/><ellipse cx="295" cy="224" rx="21" ry="10" fill="#d89e91"/>
+  <path d="M214 256q26-12 52 0-26 22-52 0" fill="#ae716a"/>
+</svg>

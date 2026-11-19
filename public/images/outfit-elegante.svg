@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" role="img" aria-labelledby="title desc">
+  <title id="title">Vestido y accesorios</title><desc id="desc">Ilustración original de un vestido midi verde salvia, un bolso y zapatos.</desc>
+  <rect width="480" height="360" rx="24" fill="#eeefe9"/><circle cx="236" cy="174" r="140" fill="#faf9f6"/>
+  <g stroke="#474e40" stroke-width="3" stroke-linejoin="round"><path d="m205 45-26 14 21 78-62 159q102 29 204 0l-62-159 21-78-26-14-9 34h-52z" fill="#969e86"/>
+  <path d="M200 137h80M214 81l-6 56m58-56 6 56m-33 12-13 140m28-140 13 140" fill="none" stroke="#68725b"/>
+  <rect x="338" y="190" width="64" height="60" rx="9" fill="#d9cdb8"/><path d="M350 190v-12q20-28 40 0v12" fill="none"/>
+  <path d="M177 322h37l-4 13h-52q-4-11 19-13zm89 0h37l17 13h-50z" fill="#55594e"/></g>
+</svg>

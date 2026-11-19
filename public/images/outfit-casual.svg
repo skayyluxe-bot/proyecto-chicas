@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 360" role="img" aria-labelledby="title desc">
+  <title id="title">Conjunto de pantalón y blusa</title><desc id="desc">Ilustración original de una blusa crema y pantalón oliva sobre fondo neutro.</desc>
+  <rect width="480" height="360" rx="24" fill="#eeefe9"/><circle cx="240" cy="172" r="140" fill="#faf9f6"/>
+  <g stroke="#474e40" stroke-width="3" stroke-linejoin="round"><path d="m175 56-46 44 32 38 22-18-8 69h130l-8-69 22 18 32-38-46-44-40-12q-25 29-50 0z" fill="#e4dfd1"/>
+  <path d="M187 189h106l15 133h-51l-17-88-17 88h-51z" fill="#88907b"/><path d="M240 193v41M188 203h104" fill="none"/><path d="M173 323h50v12h-63q-3-10 13-12zm84 0h50l13 12h-63z" fill="#faf9f6"/></g>
+  <path d="M215 45q25 19 50 0" fill="none" stroke="#bab5a7" stroke-width="3"/>
+</svg>
