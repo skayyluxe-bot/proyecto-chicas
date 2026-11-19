@@ -1,12 +1,21 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { Button } from '../components/Button'
 import { Card } from '../components/Card'
+import { PhotoPicker } from '../components/PhotoPicker'
+import { useConsultation } from '../state/ConsultationContext'
 
 export function PhotoPage() {
+  const { photo, setPhoto } = useConsultation()
+  const navigate = useNavigate()
   return <Card>
     <p className="eyebrow">Tu consulta · Paso 2</p>
     <h1>Fotografía opcional</h1>
-    <p>El selector de galería y cámara se incorporará en la fase 2.</p>
-    <p>La fotografía es solo una referencia visual; esta versión no analiza imágenes.</p>
-    <div className="actions"><Link className="button button--secondary" to="/ocasion">Volver a preferencias</Link><Link to="/resultados">Ver la pantalla de resultados</Link></div>
+    <p>Puedes añadir una referencia para consultar junto a tus preferencias o continuar sin ella.</p>
+    <PhotoPicker photo={photo} onChange={setPhoto} />
+    <div className="actions">
+      {photo && <Button onClick={() => navigate('/resultados')}>Ver resultados</Button>}
+      <Button variant={photo ? 'secondary' : 'primary'} onClick={() => { setPhoto(null); navigate('/resultados') }}>Continuar sin fotografía</Button>
+    </div>
+    <p><Link to="/ocasion">Volver a preferencias</Link></p>
   </Card>
 }
