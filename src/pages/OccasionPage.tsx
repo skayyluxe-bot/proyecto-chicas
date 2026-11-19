@@ -8,7 +8,7 @@ import type { MakeupPreference, Occasion, StylePreference } from '../domain/type
 import { useConsultation } from '../state/ConsultationContext'
 
 export function OccasionPage() {
-  const { criteria, updateCriteria } = useConsultation()
+  const { criteria, updateCriteria, setPhoto } = useConsultation()
   const [error, setError] = useState(false)
   const navigate = useNavigate()
 
@@ -20,7 +20,9 @@ export function OccasionPage() {
     }
     updateCriteria({ style: criteria.style ?? 'sin_preferencia', makeup: criteria.makeup ?? 'sin_preferencia' })
     const submitter = (event.nativeEvent as SubmitEvent).submitter
-    navigate(submitter?.getAttribute('data-destination') === 'results' ? '/resultados' : '/foto')
+    const skipPhoto = submitter?.getAttribute('data-destination') === 'results'
+    if (skipPhoto) setPhoto(null)
+    navigate(skipPhoto ? '/resultados' : '/foto')
   }
 
   return <Card>
