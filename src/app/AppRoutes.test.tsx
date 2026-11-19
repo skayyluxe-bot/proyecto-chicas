@@ -55,13 +55,18 @@ describe('Rutas y consulta compartida', () => {
     ['/', 'Tu ocasión.Tu propio estilo.'],
     ['/ocasion', 'Ocasión y preferencias'],
     ['/foto', 'Fotografía opcional'],
-    ['/resultados', 'Tus recomendaciones'],
     ['/catalogo', 'Catálogo'],
   ])('abre directamente %s', (path, title) => {
     renderApp(path)
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent(title)
     expect(screen.getByRole('main')).toHaveFocus()
   }, 30000)
+
+  it('redirige resultados a la selección cuando falta una ocasión', async () => {
+    renderApp('/resultados')
+    expect(await screen.findByRole('heading', { name: 'Ocasión y preferencias' })).toBeVisible()
+    expect(window.location.hash).toBe('#/ocasion')
+  })
 
   it('redirige una ruta desconocida al inicio', async () => {
     renderApp('/no-existe')
@@ -83,6 +88,9 @@ describe('Rutas y consulta compartida', () => {
     await user.click(screen.getByRole('button', { name: 'Continuar con fotografía' }))
     await user.click(screen.getByRole('button', { name: 'Ver resultados' }))
     expect(JSON.parse(screen.getByTestId('state').textContent!)).toEqual(expected)
+    expect(screen.getAllByRole('heading', { level: 3 }).map(heading => heading.textContent)).toEqual([
+      'Fiesta urbana', 'Noche satinada', 'Fiesta sin complicaciones', 'Luz de noche', 'Mirada de fiesta',
+    ])
     await user.click(screen.getByRole('button', { name: 'Nueva consulta' }))
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Ocasión y preferencias')
     expect(JSON.parse(screen.getByTestId('state').textContent!)).toEqual({ criteria: {}, photo: null })
@@ -108,6 +116,8 @@ describe('Rutas y consulta compartida', () => {
     await user.click(screen.getByRole('button', { name: 'Adjuntar referencia' }))
     await user.click(screen.getByRole('button', { name: 'Recomendar sin fotografía' }))
     expect(window.location.hash).toBe('#/resultados')
+    expect(screen.getByRole('heading', { name: 'Cumpleaños entre amigas' })).toBeVisible()
+    expect(screen.getByRole('heading', { name: 'Rosa de cumpleaños' })).toBeVisible()
     expect(JSON.parse(screen.getByTestId('state').textContent!)).toEqual({
       criteria: { occasion: 'cumpleanos', style: 'sin_preferencia', makeup: 'sin_preferencia' }, photo: null,
     })
