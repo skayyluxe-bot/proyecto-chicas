@@ -33,3 +33,18 @@ npm run preview
 ```
 
 El build genera `dist/`. El servidor de preview sirve esa compilación, normalmente en http://localhost:4173.
+
+## Publicación en un hosting estático
+
+1. Configura Node.js 22.12 o superior en el entorno de compilación.
+2. Ejecuta `npm ci` y `npm run build`. Si el hosting compila desde Git, configura estos comandos en su panel.
+3. Publica el contenido de `dist/` y habilita HTTPS. El directorio publicado debe servir `index.html` como página de inicio.
+4. Prueba `/#/`, `/#/ocasion` y `/#/catalogo` en la URL pública. Las rutas usan el fragmento `#`, así que el hosting puede servir solo archivos estáticos sin reglas de reescritura. Abre Resultados desde una consulta activa.
+
+La compilación usa rutas de recursos relativas. Puedes alojarla en la raíz de un dominio o en una subcarpeta.
+
+## Límites del MVP
+
+- Las recomendaciones usan el catálogo local y las preferencias seleccionadas. La fotografía solo sirve como referencia visual.
+- El archivo y las preferencias se conservan en memoria durante la consulta. Al recargar se empieza de nuevo.
+- La opción de cámara depende del navegador y del dispositivo. La galería y el flujo sin foto también están disponibles.
