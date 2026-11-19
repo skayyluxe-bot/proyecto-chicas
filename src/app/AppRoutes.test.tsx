@@ -1,26 +1,16 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HashRouter } from 'react-router-dom'
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from './AppRoutes'
-import { ConsultationProvider, useConsultation } from '../state/ConsultationContext'
+import { ConsultationProvider } from '../state/ConsultationContext'
 import { ResultsView } from '../components/ResultsView'
 import { outfits } from '../data/outfits'
 import { makeups } from '../data/makeups'
 
-function StateProbe() {
-  const { criteria, photo, updateCriteria, setPhoto } = useConsultation()
-  return <aside aria-label="Controles de prueba">
-    <button onClick={() => updateCriteria({ occasion: 'fiesta' })}>Elegir ocasión</button>
-    <button onClick={() => updateCriteria({ style: 'moderno', makeup: 'natural' })}>Elegir preferencias</button>
-    <button onClick={() => setPhoto(new File(['foto'], 'referencia.png', { type: 'image/png' }))}>Adjuntar referencia</button>
-    <output data-testid="state">{JSON.stringify({ criteria, photo: photo?.name ?? null })}</output>
-  </aside>
-}
-
 function renderApp(path: string) {
   window.location.hash = path
-  return render(<HashRouter><ConsultationProvider><StateProbe /><AppRoutes /></ConsultationProvider></HashRouter>)
+  return render(<HashRouter><ConsultationProvider><AppRoutes /></ConsultationProvider></HashRouter>)
 }
 
 const BrowserURL = URL
@@ -77,33 +67,41 @@ describe('Rutas y consulta compartida', () => {
   it('conserva y combina preferencias y fotografía al navegar, y permite reiniciar', async () => {
     const user = userEvent.setup()
     renderApp('/ocasion')
-    await user.click(screen.getByRole('button', { name: 'Elegir ocasión' }))
-    await user.click(screen.getByRole('button', { name: 'Elegir preferencias' }))
-    await user.click(screen.getByRole('button', { name: 'Adjuntar referencia' }))
-    const expected = { criteria: { occasion: 'fiesta', style: 'moderno', makeup: 'natural' }, photo: 'referencia.png' }
+    await user.selectOptions(screen.getByLabelText('Ocasión (obligatoria)'), 'fiesta')
+    await user.selectOptions(screen.getByLabelText('Estilo de vestimenta (opcional)'), 'moderno')
+    await user.selectOptions(screen.getByLabelText('Preferencia de maquillaje (opcional)'), 'natural')
+    await user.click(screen.getByRole('button', { name: 'Continuar con fotografía' }))
+    await user.upload(screen.getByLabelText('Seleccionar de la galería'), new File(['foto'], 'referencia.png', { type: 'image/png' }))
     await user.click(screen.getByRole('link', { name: 'Catálogo' }))
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Catálogo')
-    expect(JSON.parse(screen.getByTestId('state').textContent!)).toEqual(expected)
     await user.click(screen.getByRole('link', { name: 'Consulta' }))
+    expect(screen.getByLabelText('Ocasión (obligatoria)')).toHaveValue('fiesta')
+    expect(screen.getByLabelText('Estilo de vestimenta (opcional)')).toHaveValue('moderno')
+    expect(screen.getByLabelText('Preferencia de maquillaje (opcional)')).toHaveValue('natural')
     await user.click(screen.getByRole('button', { name: 'Continuar con fotografía' }))
+    expect(screen.getByRole('img', { name: 'Fotografía de referencia seleccionada' })).toBeVisible()
     await user.click(screen.getByRole('button', { name: 'Ver resultados' }))
-    expect(JSON.parse(screen.getByTestId('state').textContent!)).toEqual(expected)
     expect(screen.getAllByRole('heading', { level: 3 }).map(heading => heading.textContent)).toEqual([
       'Fiesta urbana', 'Noche satinada', 'Fiesta sin complicaciones', 'Luz de noche', 'Mirada de fiesta',
     ])
     await user.click(screen.getByRole('button', { name: 'Nueva consulta' }))
     expect(screen.getByRole('heading', { level: 1 })).toHaveTextContent('Ocasión y preferencias')
-    expect(JSON.parse(screen.getByTestId('state').textContent!)).toEqual({ criteria: {}, photo: null })
+    expect(screen.getByLabelText('Ocasión (obligatoria)')).toHaveValue('')
+    expect(screen.getByLabelText('Estilo de vestimenta (opcional)')).toHaveValue('sin_preferencia')
+    expect(screen.getByLabelText('Preferencia de maquillaje (opcional)')).toHaveValue('sin_preferencia')
+    await user.selectOptions(screen.getByLabelText('Ocasión (obligatoria)'), 'graduacion')
+    await user.click(screen.getByRole('button', { name: 'Continuar con fotografía' }))
+    expect(screen.getByLabelText('Seleccionar de la galería')).toBeVisible()
   }, 30000)
 
   it('comenzar desde inicio limpia la consulta anterior', async () => {
     const user = userEvent.setup()
-    renderApp('/')
-    await user.click(screen.getByRole('button', { name: 'Elegir ocasión' }))
-    await user.click(screen.getByRole('button', { name: 'Adjuntar referencia' }))
+    renderApp('/ocasion')
+    await user.selectOptions(screen.getByLabelText('Ocasión (obligatoria)'), 'fiesta')
+    await user.click(screen.getByRole('link', { name: 'Inicio' }))
     await user.click(screen.getByRole('button', { name: 'Comenzar una consulta' }))
     expect(window.location.hash).toBe('#/ocasion')
-    expect(JSON.parse(screen.getByTestId('state').textContent!)).toEqual({ criteria: {}, photo: null })
+    expect(screen.getByLabelText('Ocasión (obligatoria)')).toHaveValue('')
   }, 30000)
 
   it('valida la galería, muestra la referencia y la libera al continuar a resultados', async () => {
@@ -117,7 +115,12 @@ describe('Rutas y consulta compartida', () => {
     expect(screen.getByRole('alert')).toHaveTextContent('Elige una imagen JPG, PNG o WebP')
     expect(screen.queryByRole('img')).not.toBeInTheDocument()
 
-    await user.upload(gallery, new File(['foto'], 'referencia.png', { type: 'image/png' }))
+    const maxBytes = 5 * 1024 * 1024
+    await user.upload(gallery, new File([new Uint8Array(maxBytes + 1)], 'grande.png', { type: 'image/png' }))
+    expect(screen.getByRole('alert')).toHaveTextContent('La imagen supera los 5 MB')
+    expect(screen.queryByRole('img')).not.toBeInTheDocument()
+
+    await user.upload(gallery, new File([new Uint8Array(maxBytes)], 'referencia.png', { type: 'image/png' }))
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'Fotografía de referencia seleccionada' })).toHaveAttribute('src', 'blob:test-reference')
 
@@ -125,7 +128,6 @@ describe('Rutas y consulta compartida', () => {
     await user.click(screen.getByRole('button', { name: 'Ver resultados' }))
     expect(screen.getByRole('heading', { name: 'Tus recomendaciones' })).toBeVisible()
     expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:test-reference')
-    expect(JSON.parse(screen.getByTestId('state').textContent!).photo).toBe('referencia.png')
   }, 30000)
 
   it('exige una ocasión y permite continuar sin foto con preferencias opcionales', async () => {
@@ -135,19 +137,23 @@ describe('Rutas y consulta compartida', () => {
     expect(window.location.hash).toBe('#/ocasion')
     expect(screen.getByRole('alert')).toHaveTextContent('Selecciona una ocasión')
     await user.selectOptions(screen.getByLabelText('Ocasión (obligatoria)'), 'cumpleanos')
-    await user.click(screen.getByRole('button', { name: 'Adjuntar referencia' }))
+    await user.click(screen.getByRole('button', { name: 'Continuar con fotografía' }))
+    await user.upload(screen.getByLabelText('Seleccionar de la galería'), new File(['foto'], 'referencia.png', { type: 'image/png' }))
+    await user.click(screen.getByRole('link', { name: 'Volver a preferencias' }))
     await user.click(screen.getByRole('button', { name: 'Recomendar sin fotografía' }))
     expect(window.location.hash).toBe('#/resultados')
     expect(screen.getByRole('heading', { name: 'Cumpleaños entre amigas' })).toBeVisible()
     expect(screen.getByRole('heading', { name: 'Rosa de cumpleaños' })).toBeVisible()
-    expect(JSON.parse(screen.getByTestId('state').textContent!)).toEqual({
-      criteria: { occasion: 'cumpleanos', style: 'sin_preferencia', makeup: 'sin_preferencia' }, photo: null,
-    })
     await user.click(screen.getByRole('link', { name: 'Cambiar preferencias' }))
     expect(screen.getByLabelText('Ocasión (obligatoria)')).toHaveValue('cumpleanos')
+    await user.click(screen.getByRole('button', { name: 'Continuar con fotografía' }))
+    expect(screen.getByLabelText('Seleccionar de la galería')).toBeVisible()
+    await user.click(screen.getByRole('link', { name: 'Volver a preferencias' }))
     await user.selectOptions(screen.getByLabelText('Estilo de vestimenta (opcional)'), 'moderno')
     await user.click(screen.getByRole('button', { name: 'Recomendar sin fotografía' }))
-    expect(screen.getAllByRole('heading', { level: 3 })[0]).toHaveTextContent('Cumpleaños contemporáneo')
-    expect(screen.getAllByRole('heading', { level: 3 })[3]).toHaveTextContent('Brillo de celebración')
+    const outfitResults = screen.getByRole('region', { name: 'Outfits para tu ocasión' })
+    const makeupResults = screen.getByRole('region', { name: 'Maquillajes para acompañarte' })
+    expect(within(outfitResults).getAllByRole('heading', { level: 3 })[0]).toHaveTextContent('Cumpleaños contemporáneo')
+    expect(within(makeupResults).getAllByRole('heading', { level: 3 })[0]).toHaveTextContent('Brillo de celebración')
   }, 30000)
 })
