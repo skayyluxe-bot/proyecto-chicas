@@ -4,8 +4,8 @@ import { Link } from 'react-router-dom'
 import type { Makeup, Outfit } from '../../domain/types'
 import { Button } from '../Button'
 import { Card } from '../Card'
-import { requestTryOn, tryOnAvailable } from './tryOnClient'
-import type { TryOnResult } from './tryOnClient'
+import type { TryOnMode, TryOnResult } from '../../domain/tryOn'
+import { getTryOnMode, requestTryOn } from './tryOnClient'
 import './virtualTryOn.css'
 
 interface VirtualTryOnProps {
@@ -39,34 +39,46 @@ function PhotoComparison({ photo, result }: { photo: File; result: TryOnResult }
 
 export function VirtualTryOn({ photo, outfits, makeups }: VirtualTryOnProps) {
   const id = useId()
+  const [mode, setMode] = useState<TryOnMode | null>(null)
   const [outfitId, setOutfitId] = useState('')
   const [makeupId, setMakeupId] = useState('')
   const [consent, setConsent] = useState(false)
   const [result, setResult] = useState<TryOnResult | null>(null)
-  const [error, setError] = useState(false)
+  const [error, setError] = useState('')
   const [pending, setPending] = useState(false)
   const activeRequest = useRef<AbortController | null>(null)
 
-  useEffect(() => () => activeRequest.current?.abort(), [])
+  useEffect(() => {
+    const controller = new AbortController()
+    void getTryOnMode(controller.signal).then(available => {
+      if (!controller.signal.aborted) setMode(available)
+    })
+    return () => {
+      controller.abort()
+      activeRequest.current?.abort()
+    }
+  }, [])
 
   const outfit = outfits.find(item => item.id === outfitId)
   const makeup = makeups.find(item => item.id === makeupId)
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!tryOnAvailable || !photo || !outfit || !makeup || !consent || activeRequest.current) return
+    if (!mode || mode === 'disabled' || !photo || !outfit || !makeup || !consent || activeRequest.current) return
 
     const controller = new AbortController()
     activeRequest.current = controller
     setPending(true)
-    setError(false)
+    setError('')
     setResult(null)
 
     try {
-      const response = await requestTryOn({ photo, outfit, makeup }, controller.signal)
+      const response = await requestTryOn({ photo, outfit, makeup, mode }, controller.signal)
       if (!controller.signal.aborted) setResult(response)
-    } catch {
-      if (!controller.signal.aborted) setError(true)
+    } catch (failure) {
+      if (!controller.signal.aborted) {
+        setError(failure instanceof Error ? failure.message : 'No pudimos editar la foto.')
+      }
     } finally {
       activeRequest.current = null
       if (!controller.signal.aborted) setPending(false)
@@ -76,7 +88,7 @@ export function VirtualTryOn({ photo, outfits, makeups }: VirtualTryOnProps) {
   return <section className="try-on" aria-labelledby={`${id}-title`}>
     <Card>
       <h2 id={`${id}-title`}>Probador virtual</h2>
-      {!tryOnAvailable ? <>
+      {mode === null ? <p role="status">Comprobando disponibilidad…</p> : mode === 'disabled' ? <>
         <p>El probador virtual aún no está disponible.</p>
         <Button disabled>Probar en mi foto</Button>
       </> : !outfits.length || !makeups.length ? (
@@ -86,7 +98,7 @@ export function VirtualTryOn({ photo, outfits, makeups }: VirtualTryOnProps) {
         <Link className="button button--secondary" to="/foto">Añadir una foto</Link>
       </> : <>
         <p>Elige el outfit y el maquillaje que quieres probar.</p>
-        <p className="muted">Modo de prueba. La comparación usa una ilustración del catálogo y tu foto permanece en el navegador.</p>
+        {mode === 'simulated' && <p className="muted">Modo de prueba. El servidor devuelve una ilustración del catálogo. OpenAI no recibe tu foto.</p>}
         <form onSubmit={submit}>
           <fieldset disabled={pending}>
             <legend>Tu look</legend>
@@ -107,21 +119,23 @@ export function VirtualTryOn({ photo, outfits, makeups }: VirtualTryOnProps) {
               {makeups.map(item => <option key={item.id} value={item.id}>{item.nombre}</option>)}
             </select>
           </fieldset>
-          <p id={`${id}-privacy`}>Al activar el servicio de edición real, se enviará la foto a OpenAI para aplicar el look.</p>
+          <p id={`${id}-privacy`}>{mode === 'simulated' ? 'La foto se enviará al servidor de prueba para validar el archivo.'
+            : 'Enviaremos tu foto a OpenAI para aplicar el look. OpenAI puede conservarla hasta 30 días para supervisar el uso y, en ciertos casos, más tiempo para revisión de seguridad.'}</p>
+          {mode === 'openai' && <p><a href="https://developers.openai.com/api/docs/guides/your-data">Cómo trata OpenAI los datos de la API</a></p>}
           <label className="try-on-consent">
             <input type="checkbox" checked={consent} required disabled={pending} aria-describedby={`${id}-privacy`}
               onChange={event => {
                 setConsent(event.target.checked)
                 setResult(null)
               }} />
-            Simular mi autorización para editar esta foto
+            {mode === 'simulated' ? 'Autorizo el envío de mi foto al servidor de prueba' : 'Autorizo el envío de mi foto a OpenAI para editarla'}
           </label>
           <div className="actions">
             <Button type="submit" disabled={!outfit || !makeup || !consent || pending}>Probar en mi foto</Button>
           </div>
         </form>
-        <p role="status">{pending ? 'Preparando la comparación de prueba…' : result ? 'Comparación de prueba lista.' : ''}</p>
-        {error && <p className="field-error" role="alert">No pudimos preparar la comparación. Puedes reintentar o consultar las recomendaciones.</p>}
+        <p role="status">{pending ? 'Preparando la comparación…' : result ? 'Comparación lista.' : ''}</p>
+        {error && <p className="field-error" role="alert">{error}</p>}
         {result && <PhotoComparison photo={photo} result={result} />}
       </>}
     </Card>

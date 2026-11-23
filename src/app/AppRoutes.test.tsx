@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { HashRouter } from 'react-router-dom'
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AppRoutes } from './AppRoutes'
 import { ConsultationProvider } from '../state/ConsultationContext'
 import { ResultsView } from '../components/ResultsView'
@@ -160,15 +160,25 @@ describe('Rutas y consulta compartida', () => {
 })
 
 describe('Probador virtual', () => {
+  beforeEach(() => {
+    vi.spyOn(tryOnClient, 'getTryOnMode').mockResolvedValue('simulated')
+    vi.spyOn(tryOnClient, 'requestTryOn').mockImplementation(async ({ outfit }) => {
+      await new Promise(resolve => setTimeout(resolve, 350))
+      return { imageUrl: outfit.imagen, simulated: true }
+    })
+  })
+  afterEach(() => vi.restoreAllMocks())
+
   async function openTryOn() {
     const user = userEvent.setup()
     renderApp('/ocasion')
     await user.selectOptions(screen.getByLabelText('Ocasión (obligatoria)'), 'fiesta')
     await user.click(screen.getByRole('button', { name: 'Recomendar sin fotografía' }))
-    await user.click(screen.getByRole('link', { name: 'Añadir una foto' }))
+    await user.click(await screen.findByRole('link', { name: 'Añadir una foto' }))
     const photo = new File(['foto'], 'referencia.png', { type: 'image/png' })
     await user.upload(screen.getByLabelText('Seleccionar de la galería'), photo)
     await user.click(screen.getByRole('button', { name: 'Ver resultados' }))
+    await screen.findByLabelText('Outfit recomendado')
     return { user, photo, panel: within(screen.getByRole('region', { name: 'Probador virtual' })) }
   }
 
@@ -216,7 +226,7 @@ describe('Probador virtual', () => {
       await user.click(panel.getByRole('checkbox'))
       const submit = panel.getByRole('button', { name: 'Probar en mi foto' })
       await user.click(submit)
-      expect(await panel.findByRole('alert')).toHaveTextContent('No pudimos preparar la comparación')
+      expect(await panel.findByRole('alert')).toHaveTextContent('Error simulado')
       expect(screen.getByRole('heading', { name: 'Fiesta urbana' })).toBeVisible()
       expect(submit).toBeEnabled()
       await user.click(submit)
