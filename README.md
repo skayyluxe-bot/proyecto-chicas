@@ -63,6 +63,8 @@ Para comprobar el modo deshabilitado, reinicia el servidor con `TRY_ON_MODE=disa
 
 ### Despliegue con servidor en Render
 
+[Abrir el despliegue de Beauty & Fashion en Render](https://render.com/deploy?repo=https://github.com/skayyluxe-bot/proyecto-chicas)
+
 La configuración `render.yaml` prepara un servicio web Node.js. El comando de compilación instala las dependencias y genera ambos directorios. `npm start` sirve el sitio y `/api/try-on` en el mismo dominio. Render proporciona `PORT` y la configuración escucha en `0.0.0.0`. [Documentación de Render Web Services](https://render.com/docs/web-services)
 
 El probador queda deshabilitado si no hay configuración de modo. Para una prueba controlada sin OpenAI, usa `TRY_ON_MODE=simulated` y una imagen de prueba autorizada. Comprueba que se puede abrir la consulta sin foto y que una edición consentida devuelve la ilustración. Después, vuelve a `disabled` antes de compartir el sitio.

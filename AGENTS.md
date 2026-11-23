@@ -1104,25 +1104,25 @@ para revisión mediante Pull Request.
 
 Actualizar estas casillas únicamente cuando la tarea haya sido integrada en `main`.
 
-- [ ] F0-01 — Preparación
-- [ ] F1-01 — Modelos de dominio
-- [ ] F1-02 — Sistema visual
-- [ ] F1-03 — Navegación y estado
-- [ ] F2-01 — Catálogo local
-- [ ] F2-02 — Selección de ocasiones
-- [ ] F2-03 — Recomendaciones de outfits
-- [ ] F2-04 — Recomendaciones de maquillaje
-- [ ] F2-05 — Fotografías
-- [ ] F2-06 — Catálogo visual
-- [ ] F2-07 — Pantalla de resultados
-- [ ] F3-01 — Integración
-- [ ] F4-01 — Pruebas
-- [ ] F4-02 — Diseño adaptable
-- [ ] F4-03 — Correcciones
-- [ ] F5-01 — Publicación
-- [ ] F6-01 — Interfaz del probador virtual
-- [ ] F6-02 — Función de edición de imágenes
-- [ ] F6-03 — Validación y preparación del despliegue
+- [x] F0-01 — Preparación
+- [x] F1-01 — Modelos de dominio
+- [x] F1-02 — Sistema visual
+- [x] F1-03 — Navegación y estado
+- [x] F2-01 — Catálogo local
+- [x] F2-02 — Selección de ocasiones
+- [x] F2-03 — Recomendaciones de outfits
+- [x] F2-04 — Recomendaciones de maquillaje
+- [x] F2-05 — Fotografías
+- [x] F2-06 — Catálogo visual
+- [x] F2-07 — Pantalla de resultados
+- [x] F3-01 — Integración
+- [x] F4-01 — Pruebas
+- [x] F4-02 — Diseño adaptable
+- [x] F4-03 — Correcciones
+- [x] F5-01 — Preparación de la publicación estática
+- [x] F6-01 — Interfaz del probador virtual
+- [x] F6-02 — Función de edición de imágenes
+- [ ] F6-03 — Configuración integrada en `main`. Falta verificar el despliegue de prueba en Render.
 - [ ] F7-01 — Activación y prueba con la API real
 
 ## 15. Resultado esperado
