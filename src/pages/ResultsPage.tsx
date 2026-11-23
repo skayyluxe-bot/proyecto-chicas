@@ -2,6 +2,7 @@ import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button'
 import { Card } from '../components/Card'
 import { ResultsView } from '../components/ResultsView'
+import { VirtualTryOn } from '../components/virtual-try-on/VirtualTryOn'
 import { makeups } from '../data/makeups'
 import { outfits } from '../data/outfits'
 import { recommendMakeup } from '../domain/recommendMakeup'
@@ -10,7 +11,7 @@ import type { ConsultationInput } from '../domain/types'
 import { useConsultation } from '../state/ConsultationContext'
 
 export function ResultsPage() {
-  const { criteria, reset } = useConsultation()
+  const { criteria, photo, reset } = useConsultation()
   const navigate = useNavigate()
 
   if (!criteria.occasion) return <Navigate to="/ocasion" replace />
@@ -33,6 +34,7 @@ export function ResultsPage() {
       <Link to="/catalogo">Explorar el catálogo</Link>
     </div>
     </Card>
+    <VirtualTryOn photo={photo} outfits={recommendedOutfits} makeups={recommendedMakeups} />
     <ResultsView outfits={recommendedOutfits} makeups={recommendedMakeups} />
   </>
 }
