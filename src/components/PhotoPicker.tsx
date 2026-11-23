@@ -45,7 +45,7 @@ export function PhotoPicker({ photo, onChange }: PhotoPickerProps) {
 
   return <section aria-label="Fotografía de referencia">
     <p id={`${id}-privacy`}>La fotografía es solo una referencia visual; esta versión no analiza imágenes.</p>
-    <p id={`${id}-formats`} className="muted">JPG, PNG o WebP · Máximo 5 MB. La fotografía permanece en tu navegador y no se envía a servidores.</p>
+    <p id={`${id}-formats`} className="muted">JPG, PNG o WebP · Máximo 5 MB. Como referencia, la foto queda en tu navegador. El probador virtual te pedirá autorización antes de enviarla.</p>
     <label htmlFor={`${id}-gallery`}>{photo ? 'Cambiar fotografía de la galería' : 'Seleccionar de la galería'}</label>
     <input id={`${id}-gallery`} type="file" accept="image/jpeg,image/png,image/webp" onChange={selectFile}
       aria-describedby={`${id}-formats ${id}-privacy${error ? ` ${id}-error` : ''}`} aria-invalid={!!error || undefined} />
