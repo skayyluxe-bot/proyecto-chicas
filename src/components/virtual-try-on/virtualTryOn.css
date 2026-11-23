@@ -1,0 +1,42 @@
+.try-on {
+  margin-top: var(--space-3);
+}
+
+.try-on fieldset label:not(:first-of-type) {
+  margin-top: var(--space-2);
+}
+
+.try-on-consent {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 44px;
+}
+
+.try-on-consent input {
+  flex-shrink: 0;
+}
+
+.steps.try-on-comparison {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.try-on-comparison figure {
+  min-width: 0;
+  margin: 0;
+}
+
+.try-on-comparison img {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 26rem;
+  object-fit: contain;
+  border-radius: var(--radius);
+  background: var(--color-soft);
+}
+
+@media (max-width: 600px) {
+  .steps.try-on-comparison {
+    grid-template-columns: 1fr;
+  }
+}

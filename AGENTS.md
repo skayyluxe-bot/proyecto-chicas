@@ -42,7 +42,9 @@ Utilizar únicamente las tecnologías siguientes:
 | Pruebas | Vitest y React Testing Library |
 | Versiones | Git y GitHub |
 
-No implementar backend, autenticación, bases de datos externas ni servicios de inteligencia artificial en esta versión.
+Las fases 0 a 5 entregan el MVP estático. Durante esas fases las fotos se mantienen en el navegador y las recomendaciones se calculan localmente.
+
+Las fases 6 y 7 amplían el MVP con un probador virtual opcional. Se conserva la aplicación React y se añade una función de servidor en TypeScript para editar una foto con la API de imágenes de OpenAI. El probador utiliza el outfit y el maquillaje que la usuaria elige entre las recomendaciones existentes. La primera entrega genera una imagen editada por solicitud y funciona sin cuentas de usuarias ni una base de datos de fotos.
 
 ## 3. Arquitectura de la aplicación
 
@@ -830,6 +832,79 @@ Si no se ha realizado el despliegue, informar que la aplicación está lista par
 
 ---
 
+# FASE 6 — Probador virtual con IA
+
+### Tarea F6-01: Interfaz del probador virtual
+
+**Rama:** `feature/F6-01-virtual-try-on-ui`
+
+**Objetivo:** permitir que la usuaria elija un outfit y un maquillaje recomendados y vea cómo quedarían en su foto.
+
+1. Reutilizar la fotografía de la consulta y ofrecer la opción de añadirla si falta. Para mostrar el look completo, pedir una foto de cuerpo entero, con el rostro visible y buena iluminación.
+2. Mostrar la acción **Probar en mi foto** en Resultados. Antes de enviar la solicitud, pedir autorización expresa e indicar que la foto se enviará a OpenAI para editarla. Mantener la fotografía en el navegador durante el flujo normal del MVP.
+3. Mostrar el estado de generación y el antes y después. Si la edición falla o el probador está deshabilitado, mantener disponibles las recomendaciones del catálogo.
+4. Verificar el flujo con una respuesta simulada. La simulación se usa en desarrollo y pruebas y se identifica como tal.
+
+**Archivos previstos:** páginas de fotografía y resultados, componentes del probador, cliente de la función y pruebas asociadas.
+
+**Criterios de aceptación:** se puede completar una consulta sin foto ni IA. La edición requiere una foto válida, un outfit, un maquillaje y autorización. La comparación se puede usar en móvil y escritorio.
+
+**Dependencias:** desarrollar sobre la rama verificada de F5-01. Integrar F5-01 en `main` antes de integrar F6-01.
+
+### Tarea F6-02: Función de edición de imágenes
+
+**Rama:** `feature/F6-02-image-edit-service`
+
+**Objetivo:** preparar la integración en servidor con `gpt-image-2.6-flare` mediante la API de edición de imágenes.
+
+1. Recibir la foto y los identificadores del outfit y el maquillaje elegidos. Validar en servidor el formato, el tamaño y los identificadores. Construir las instrucciones con datos del catálogo.
+2. Solicitar una sola imagen vertical en calidad media como configuración inicial. Pedir que se aplique el look preservando los rasgos, el tono de piel y la pose. Presentar la imagen como una aproximación visual.
+3. Preparar la lectura de `OPENAI_API_KEY` como secreto del servidor. Mantener el proveedor real deshabilitado durante esta fase. Probar el adaptador con un proveedor simulado, sin credenciales ni cargos.
+4. Manejar tiempos de espera, archivos inválidos y errores del proveedor. Impedir solicitudes duplicadas mientras la edición está en curso y aplicar límites de uso en el servidor antes de habilitar el acceso público.
+5. Procesar la fotografía sin guardarla de forma persistente ni incluirla en registros de la aplicación. Registrar únicamente datos operativos, como duración, estado y tokens reportados en `usage`, sin guardar la foto ni la clave.
+
+**Archivos previstos:** función de servidor, adaptador del proveedor, contrato con el cliente, configuración del entorno y pruebas asociadas.
+
+**Criterios de aceptación:** la función supera las pruebas con un proveedor simulado. Si falta la clave o la función está deshabilitada, el catálogo y las recomendaciones siguen operativos.
+
+**Dependencias:** F6-01.
+
+### Tarea F6-03: Validación y preparación del despliegue
+
+**Rama:** `test/F6-03-virtual-try-on-verification`
+
+**Objetivo:** dejar terminado y verificado todo el flujo antes de configurar la clave.
+
+1. Probar la autorización, validación de archivos, carga, comparación, errores, límites de uso y consulta normal sin IA en móvil y escritorio. Ejecutar las verificaciones del proyecto.
+2. Elegir y preparar un hosting que sirva React y ejecute la función de servidor. Verificar el despliegue de prueba con la edición real deshabilitada.
+3. Revisar y documentar el uso y la retención de fotos por parte del proveedor. Reflejar esta información en el aviso que ve la usuaria antes de autorizar el envío.
+4. Documentar el despliegue, la variable de entorno, cómo activar o desactivar el probador y cómo medir el costo por edición. El archivo de ejemplo, si se crea, contiene solo el nombre de la variable y un valor vacío.
+
+**Criterios de aceptación:** la aplicación compila y el recorrido completo funciona con la simulación. La prueba con el proveedor real queda reservada para F7-01.
+
+**Dependencias:** F6-02.
+
+---
+
+# FASE 7 — Activación del probador virtual
+
+### Tarea F7-01: Configurar la clave y probar la edición real
+
+**Rama:** `chore/F7-01-virtual-try-on-release`
+
+**Objetivo:** activar el proveedor real como último paso, una vez terminadas las fases pendientes.
+
+1. Confirmar que F5-01 y las tareas F6 están integradas y verificadas. Confirmar acceso al modelo y saldo de la API.
+2. Configurar `OPENAI_API_KEY` en los secretos del servidor de pruebas. La clave no se incluye en el repositorio, el chat, una variable `VITE_` ni el código que recibe el navegador.
+3. Ejecutar una prueba controlada con fotos autorizadas. Revisar el parecido, la aplicación del outfit y el maquillaje, el tiempo de espera y el costo real según los tokens reportados.
+4. Si la prueba cumple los criterios de aceptación, habilitar el probador en producción con sus límites de uso y verificar el recorrido en la URL publicada. Si queda pendiente la activación, documentar el motivo y mantener disponibles las recomendaciones del catálogo.
+
+**Criterios de aceptación:** una solicitud autorizada genera una imagen y permite compararla con la original. Se verifica el consumo real y se confirma que el navegador nunca recibe la clave.
+
+**Dependencias:** F5-01 y F6-03.
+
+---
+
 ## 8. Dependencias y paralelismo
 
 Las tareas deben organizarse en el siguiente orden:
@@ -868,6 +943,14 @@ F4-01            F4-02
         F4-03
           |
         F5-01
+          |
+        F6-01
+          |
+        F6-02
+          |
+        F6-03
+          |
+        F7-01
 ```
 
 Las flechas representan dependencias, no duración.
@@ -882,6 +965,8 @@ Las flechas representan dependencias, no duración.
 - F3-01 comienza cuando todas las funcionalidades estén integradas.
 - F4-01 y F4-02 pueden desarrollarse simultáneamente.
 - F4-03 y F5-01 deben realizarse en orden.
+- Las tareas de Fase 6 se ejecutan en orden y se verifican sin clave real. F5-01 debe integrarse antes de incorporar los cambios de Fase 6 a `main`.
+- La clave y la prueba con el proveedor real se reservan para F7-01, después de integrar F5-01 y completar la Fase 6.
 
 ## 9. Reglas de Git
 
@@ -948,6 +1033,14 @@ Comprobar estos escenarios:
 13. El diseño funciona en móvil y escritorio.
 14. La versión de producción funciona en el navegador.
 
+Para el probador virtual, verificar también:
+
+1. La foto se envía únicamente después de la autorización y al solicitar la edición.
+2. Se puede elegir un look, ver el estado de carga y comparar la foto original con la editada.
+3. Una foto inválida, un error del proveedor o una clave ausente dejan disponible el recorrido con el catálogo.
+4. Las pruebas de la Fase 6 funcionan sin clave y el cliente compilado no contiene secretos.
+5. La prueba final de F7-01 registra el consumo real y permite evaluar el parecido, la ropa y el maquillaje.
+
 ## 12. Instrucciones obligatorias para los agentes
 
 Todos los agentes deben seguir estas reglas:
@@ -957,7 +1050,7 @@ Todos los agentes deben seguir estas reglas:
 3. Utilizar la rama correspondiente.
 4. Respetar los contratos del dominio.
 5. Modificar solo archivos autorizados.
-6. No agregar funcionalidades fuera del MVP.
+6. Limitar los cambios al alcance de la fase asignada. El probador virtual corresponde a las fases 6 y 7.
 7. No instalar dependencias innecesarias.
 8. No duplicar lógica entre componentes.
 9. Ejecutar pruebas antes de entregar.
@@ -1027,13 +1120,17 @@ Actualizar estas casillas únicamente cuando la tarea haya sido integrada en `ma
 - [ ] F4-02 — Diseño adaptable
 - [ ] F4-03 — Correcciones
 - [ ] F5-01 — Publicación
+- [ ] F6-01 — Interfaz del probador virtual
+- [ ] F6-02 — Función de edición de imágenes
+- [ ] F6-03 — Validación y preparación del despliegue
+- [ ] F7-01 — Activación y prueba con la API real
 
 ## 15. Resultado esperado
 
-Al finalizar todas las fases, Beauty & Fashion debe ser una aplicación web funcional que permita consultar y recibir recomendaciones de moda y maquillaje.
+Al finalizar la Fase 5, Beauty & Fashion debe permitir consultar y recibir recomendaciones de moda y maquillaje a partir del catálogo local.
 
 La primera versión debe ser sencilla, comprensible, estable y fácil de ampliar.
 
-Las mejoras futuras, como inteligencia artificial, análisis de fotografías, favoritos e integración con tiendas, deben mantenerse fuera del MVP.
+Al finalizar la Fase 7, la usuaria podrá probar un look recomendado en su propia foto y comparar el resultado con la original. El análisis independiente de fotografías, los favoritos y la integración con tiendas quedan fuera de este plan.
 
-**Primera tarea que debe ejecutar Codex: F0-01.**
+**Al retomar el proyecto, verificar qué tareas están integradas en `main` y continuar con la primera pendiente según sus dependencias.**

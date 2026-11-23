@@ -5,6 +5,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vites
 import { AppRoutes } from './AppRoutes'
 import { ConsultationProvider } from '../state/ConsultationContext'
 import { ResultsView } from '../components/ResultsView'
+import * as tryOnClient from '../components/virtual-try-on/tryOnClient'
 import { outfits } from '../data/outfits'
 import { makeups } from '../data/makeups'
 
@@ -155,5 +156,74 @@ describe('Rutas y consulta compartida', () => {
     const makeupResults = screen.getByRole('region', { name: 'Maquillajes para acompañarte' })
     expect(within(outfitResults).getAllByRole('heading', { level: 3 })[0]).toHaveTextContent('Cumpleaños contemporáneo')
     expect(within(makeupResults).getAllByRole('heading', { level: 3 })[0]).toHaveTextContent('Brillo de celebración')
+  }, 30000)
+})
+
+describe('Probador virtual', () => {
+  async function openTryOn() {
+    const user = userEvent.setup()
+    renderApp('/ocasion')
+    await user.selectOptions(screen.getByLabelText('Ocasión (obligatoria)'), 'fiesta')
+    await user.click(screen.getByRole('button', { name: 'Recomendar sin fotografía' }))
+    await user.click(screen.getByRole('link', { name: 'Añadir una foto' }))
+    const photo = new File(['foto'], 'referencia.png', { type: 'image/png' })
+    await user.upload(screen.getByLabelText('Seleccionar de la galería'), photo)
+    await user.click(screen.getByRole('button', { name: 'Ver resultados' }))
+    return { user, photo, panel: within(screen.getByRole('region', { name: 'Probador virtual' })) }
+  }
+
+  async function selectLook(user: ReturnType<typeof userEvent.setup>, panel: ReturnType<typeof within>) {
+    await user.selectOptions(panel.getByLabelText('Outfit recomendado'), panel.getByRole('option', { name: 'Fiesta urbana' }))
+    await user.selectOptions(panel.getByLabelText('Maquillaje recomendado'), panel.getByRole('option', { name: 'Luz de noche' }))
+  }
+
+  it('exige elegir el look y autorizar antes de mostrar la comparación simulada', async () => {
+    const { user, photo, panel } = await openTryOn()
+    const request = vi.spyOn(tryOnClient, 'requestTryOn')
+    try {
+      const submit = panel.getByRole('button', { name: 'Probar en mi foto' })
+      expect(submit).toBeDisabled()
+      await selectLook(user, panel)
+      await user.click(submit)
+      expect(request).not.toHaveBeenCalled()
+      await user.click(panel.getByRole('checkbox'))
+      await user.click(submit)
+      expect(submit).toBeDisabled()
+      expect(panel.getByRole('status')).toHaveTextContent('Preparando la comparación')
+      expect(request).toHaveBeenCalledOnce()
+      expect(request.mock.calls[0][0]).toMatchObject({
+        photo,
+        outfit: { nombre: 'Fiesta urbana' },
+        makeup: { nombre: 'Luz de noche' },
+      })
+      expect(await panel.findByRole('img', { name: 'Tu fotografía original' })).toHaveAttribute('src', 'blob:test-reference')
+      expect(panel.getByText('Después · Ilustración de ejemplo')).toBeVisible()
+
+      vi.mocked(URL.revokeObjectURL).mockClear()
+      await user.click(panel.getByRole('checkbox'))
+      expect(panel.queryByRole('img')).not.toBeInTheDocument()
+      expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:test-reference')
+    } finally {
+      request.mockRestore()
+    }
+  }, 30000)
+
+  it('mantiene las recomendaciones y permite reintentar si falla la edición', async () => {
+    const { user, panel } = await openTryOn()
+    const request = vi.spyOn(tryOnClient, 'requestTryOn').mockRejectedValueOnce(new Error('Error simulado'))
+    try {
+      await selectLook(user, panel)
+      await user.click(panel.getByRole('checkbox'))
+      const submit = panel.getByRole('button', { name: 'Probar en mi foto' })
+      await user.click(submit)
+      expect(await panel.findByRole('alert')).toHaveTextContent('No pudimos preparar la comparación')
+      expect(screen.getByRole('heading', { name: 'Fiesta urbana' })).toBeVisible()
+      expect(submit).toBeEnabled()
+      await user.click(submit)
+      expect(await panel.findByText('Después · Ilustración de ejemplo')).toBeVisible()
+      expect(panel.queryByRole('alert')).not.toBeInTheDocument()
+    } finally {
+      request.mockRestore()
+    }
   }, 30000)
 })
