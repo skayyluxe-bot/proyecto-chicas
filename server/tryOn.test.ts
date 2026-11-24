@@ -120,11 +120,18 @@ describe('Servicio del probador virtual', () => {
     expect(send).toHaveBeenCalledOnce()
   })
 
-  it('oculta el contenido de los errores del proveedor', async () => {
-    const send = vi.fn<typeof fetch>().mockResolvedValue(Response.json({ error: 'datos privados' }, { status: 400 }))
-    const service = await serve(createTryOnHandler({ mode: 'openai', edit: createImageEditor('falsa', send), log: vi.fn() }))
+  it.each([
+    [401, 'invalid_api_key', 'invalid_api_key'],
+    [400, 'codigo-desconocido', undefined],
+  ])('registra el diagnóstico de OpenAI sin exponer contenido al cliente (%i)', async (providerStatus, code, providerCode) => {
+    const send = vi.fn<typeof fetch>().mockResolvedValue(Response.json({
+      error: { message: 'datos privados', code },
+    }, { status: providerStatus }))
+    const log = vi.fn()
+    const service = await serve(createTryOnHandler({ mode: 'openai', edit: createImageEditor('falsa', send), log }))
     const response = await service.submit({ [tryOnHeaders.mode]: 'openai' })
     expect(response.status).toBe(502)
     expect(await response.json()).toEqual({ error: 'No se pudo completar la edición.' })
+    expect(log).toHaveBeenCalledWith({ event: 'try_on', status: 502, durationMs: expect.any(Number), providerStatus, providerCode })
   })
 })

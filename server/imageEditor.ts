@@ -33,6 +33,22 @@ interface OpenAIImageResponse {
   }
 }
 
+const diagnosticCodes = new Set([
+  'invalid_api_key',
+  'insufficient_quota',
+  'billing_hard_limit_reached',
+  'model_not_found',
+  'rate_limit_exceeded',
+  'organization_verification_required',
+  'content_policy_violation',
+])
+
+export class ImageProviderError extends Error {
+  constructor(readonly providerStatus: number, readonly providerCode?: string) {
+    super('El proveedor rechazó la edición.')
+  }
+}
+
 export function createImageEditor(apiKey: string, send: typeof fetch = fetch) {
   return async ({ photo, photoType, prompt }: ImageEdit, signal: AbortSignal): Promise<ImageEditResult> => {
     const form = new FormData()
@@ -50,7 +66,11 @@ export function createImageEditor(apiKey: string, send: typeof fetch = fetch) {
       signal,
       redirect: 'error',
     })
-    if (!response.ok) throw new Error('El proveedor rechazó la edición.')
+    if (!response.ok) {
+      const body = await response.json().catch(() => null) as { error?: { code?: unknown } } | null
+      const code = body?.error?.code
+      throw new ImageProviderError(response.status, typeof code === 'string' && diagnosticCodes.has(code) ? code : undefined)
+    }
 
     const { data, usage } = await response.json() as OpenAIImageResponse
     const image = data?.[0]?.b64_json
