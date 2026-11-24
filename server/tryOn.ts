@@ -4,7 +4,7 @@ import { outfits } from '../src/data/outfits'
 import { tryOnHeaders } from '../src/domain/tryOn'
 import type { TryOnMode, TryOnResult } from '../src/domain/tryOn'
 import type { Makeup, Outfit } from '../src/domain/types'
-import { createImageEditor, photoExtensions } from './imageEditor'
+import { createImageEditor, ImageProviderError, photoExtensions } from './imageEditor'
 import type { PhotoType } from './imageEditor'
 
 const maxPhotoBytes = 5 * 1024 * 1024
@@ -121,7 +121,12 @@ export function createTryOnHandler({
       return json(response, 200, payload)
     } catch (error) {
       const status = timeout.aborted ? 504 : disconnected.signal.aborted ? 499 : error instanceof TryOnError ? error.status : 502
-      if (started !== undefined && availableMode === 'openai') log({ event: 'try_on', status, durationMs: now() - started })
+      if (started !== undefined && availableMode === 'openai') {
+        const providerDetails = error instanceof ImageProviderError
+          ? { providerStatus: error.providerStatus, providerCode: error.providerCode }
+          : {}
+        log({ event: 'try_on', status, durationMs: now() - started, ...providerDetails })
+      }
       if (response.destroyed) return
       request.resume()
       return json(response, status, { error: 'No se pudo completar la edición.' })
