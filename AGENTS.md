@@ -1122,7 +1122,7 @@ Actualizar estas casillas únicamente cuando la tarea haya sido integrada en `ma
 - [x] F5-01 — Preparación de la publicación estática
 - [x] F6-01 — Interfaz del probador virtual
 - [x] F6-02 — Función de edición de imágenes
-- [ ] F6-03 — Configuración integrada en `main`. Falta verificar el despliegue de prueba en Render.
+- [x] F6-03 — Despliegue de prueba verificado en Render con la edición deshabilitada.
 - [ ] F7-01 — Activación y prueba con la API real
 
 ## 15. Resultado esperado
