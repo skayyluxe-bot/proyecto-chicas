@@ -36,6 +36,10 @@ const server = createServer({ requestTimeout: 30_000, headersTimeout: 15_000 }, 
   }
 })
 
-server.listen(Number(process.env.PORT ?? 4174), process.env.HOST ?? '127.0.0.1', () => {
-  console.info('Beauty & Fashion está listo para recibir consultas.')
+const onRender = process.env.RENDER === 'true'
+const host = process.env.HOST ?? (onRender ? '0.0.0.0' : '127.0.0.1')
+const port = Number(process.env.PORT ?? (onRender ? 10000 : 4174))
+
+server.listen(port, host, () => {
+  console.info(`Beauty & Fashion escucha en ${host}:${port}`)
 })
